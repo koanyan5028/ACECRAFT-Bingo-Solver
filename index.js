@@ -216,7 +216,7 @@ function reset(newSize) {
     for (let i = 0; i < size * size; i++) {
         linesLookup.push(lines.filter(line => line.includes(i)));
     }
-    board = [];
+    board = Array(size * size).fill(undefined);
     solve();
     // TODO: Implement arrow key thing
     boardElement.children().on("click", function (event) {

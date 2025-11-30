@@ -233,7 +233,7 @@ function reset(newSize :number){
 		linesLookup.push(lines.filter(line=>line.includes(i)));
 	}
 
-	board=[];
+	board=Array(size*size).fill(undefined);
 	solve();
 
 	// TODO: Implement arrow key thing
