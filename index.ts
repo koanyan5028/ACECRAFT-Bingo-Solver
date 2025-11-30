@@ -41,7 +41,7 @@ function copyBoard(board: State[]) :State[]{
 }
 
 function compareScores(a :number[],b :number[]) :number{
-	for(let i=size;i>=0;i--){
+	for(let i=size-1;i>=0;i--){
 		let compare=a[i]-b[i];
 		if(compare!=0) return compare;
 	}
@@ -78,12 +78,12 @@ function solveBoard(board :State[]) :{results :number[],scoreChain :number[][]}{
 		};
 	}
 
-	let maxScore :number[]=Array(size+1).fill(0);
+	let maxScore :number[]=Array(size).fill(0);
 	let candidates :number[]=[];
 	for(let square=0;square<size*size;square++){
 		if(board[square]!=undefined) continue;
 
-		let score :number[]=Array(size+1).fill(0);
+		let score :number[]=Array(size).fill(0);
 		for(let line of linesLookup[square]){
 			let count :number|undefined=0;
 			for(let position of line){

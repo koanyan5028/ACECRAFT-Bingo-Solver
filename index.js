@@ -33,7 +33,7 @@ function copyBoard(board) {
     return Array.from(board);
 }
 function compareScores(a, b) {
-    for (let i = size; i >= 0; i--) {
+    for (let i = size - 1; i >= 0; i--) {
         let compare = a[i] - b[i];
         if (compare != 0)
             return compare;
@@ -68,12 +68,12 @@ function solveBoard(board) {
             scoreChain: []
         };
     }
-    let maxScore = Array(size + 1).fill(0);
+    let maxScore = Array(size).fill(0);
     let candidates = [];
     for (let square = 0; square < size * size; square++) {
         if (board[square] != undefined)
             continue;
-        let score = Array(size + 1).fill(0);
+        let score = Array(size).fill(0);
         for (let line of linesLookup[square]) {
             let count = 0;
             for (let position of line) {
