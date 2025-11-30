@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+	<head lang="ja">
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>ACECRAFT Bingo Solver</title>
+		<link rel="stylesheet" href="index.css" type="text/css">
+	</head>
+	<body>
+		<h1>ACECRAFT Bingo Solver</h1>
+		<noscript>
+			<p class="error">Error: JavaScript is disabled!!</p>
+			<p class="error">エラー: JavaScriptを有効にして下さい。</p>
+		</noscript>
+		<div id="main">
+			<div id="board-container">
+        <div id="control-panel">
+					<div id="size-container">
+						<label for="size">Size/サイズ:</label>
+						<input type="number" id="size" name="size" value="4" min="1" max="7" step="1" />
+					</div>
+					<input type="button" id="clear" name="clear" value="Clear/クリア" />
+				</div>
+				<div id="board"></div>
+			</div>
+		</div>
+		<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+		<script src="index.js"></script>
+		<footer>
+			<div>
+				<div>
+					<a href="https://acecraft.viztagame.com/">ACECRAFT official page</a>
+					<a href="#">GitHub repository</a>
+				</div>
+				<div>
+					<p>ACECRAFT Bingo Solver © 2025 Koanya</p>
+				</div>
+			</div>
+		</footer>
+	</body>
+</html>

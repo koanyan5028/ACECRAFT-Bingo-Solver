@@ -1,0 +1,255 @@
+"use strict";
+
+$("div#main").css("display","unset");
+setInterval(()=>{
+	$("div#main").css("display","unset");
+},1000);
+console.log("script loaded!");
+
+setInterval(()=>{
+	let bodyHeight=$("body").height()!;
+	let windowHeight=$(window).height()!;
+	if(windowHeight<bodyHeight+7){
+		let overflow=bodyHeight+8-windowHeight;
+		let margin=parseFloat($("footer").css("margin-top"))-overflow;
+		$("footer").css("margin-top",Math.max(margin,0));
+		if(margin<0){
+			$("body").css("overflow","auto");
+		}else{
+			$("body").css("overflow","hidden");
+		}
+		return;
+	}
+	let footerHeight=$("footer").outerHeight()!;
+	let footerPosition=$("footer").position()!.top;
+	$("footer").css("margin-top",bodyHeight-footerPosition-footerHeight);
+	$("body").css("overflow","hidden");
+});
+
+
+type State=boolean|undefined;
+
+const boardElement=$("div#board");
+
+let lines :number[][]=[];
+// ↓ここまで最適化する必要は無さそう
+// let linesLookup;
+let board :State[]=[];
+let size :number=0;
+
+function copyBoard(board: State[]) :State[]{
+	return Array.from(board);
+}
+
+function compareScores(a :number[],b :number[]) :number{
+	for(let i=size;i>=0;i--){
+		let compare=a[i]-b[i];
+		if(compare!=0) return compare;
+	}
+	return 0;
+}
+
+function compareScoreChains(a :number[][],b :number[][]) :number{
+	for(let i=a.length-1;i>=0;i--){
+		let compare=compareScores(a[i],b[i]);
+		if(compare!=0) return compare;
+	}
+	return 0;
+}
+
+let debugCallCount :number=0;
+function solveBoard(board :State[]) :{results :number[],scoreChain :number[][]}{
+	debugCallCount++;
+
+	let hasValidLine=false;
+	let hasCompletedLine=false;
+	for(let line of lines){
+		if(line.every(position=>board[position]==true)){
+			hasCompletedLine=true;
+			break;
+		}
+		if(!line.some(position=>board[position]==false)){
+			hasValidLine=true;
+		}
+	}
+	if(hasCompletedLine || !hasValidLine){
+		return {
+			results: [],
+			scoreChain: []
+		};
+	}
+
+	let maxScore :number[]=Array(size+1).fill(0);
+	let candidates :number[]=[];
+	for(let square=0;square<size*size;square++){
+		if(board[square]!=undefined) continue;
+
+		let score :number[]=Array(size+1).fill(0);
+		for(let line of lines){
+			if(!line.includes(square)) continue;
+
+			let count :number|undefined=0;
+			for(let position of line){
+				let state=board[position];
+				if(state==false){
+					count=undefined;
+					break;
+				}
+				if(state==true){
+					count++;
+				}
+			}
+			if(count!=undefined){
+				score[count]++;
+			}
+		}
+
+		let compareResult=compareScores(score,maxScore);
+
+		if(compareResult>0){
+			maxScore=score;
+			candidates=[square];
+		}else if(compareResult==0){
+			candidates.push(square);
+		}
+	}
+
+	let maxScoreChain :number[][]|undefined=undefined;
+	let results :number[]=[];
+	for(let candidate of candidates){
+		let copiedBoard=copyBoard(board);
+		copiedBoard[candidate]=true;
+		let {scoreChain}=solveBoard(copiedBoard);
+		if(maxScoreChain==undefined){
+			maxScoreChain=scoreChain;
+			results.push(candidate);
+		}else{
+			let compareResult=compareScoreChains(scoreChain,maxScoreChain);
+			if(compareResult>0){
+				maxScoreChain=scoreChain;
+				results=[candidate];
+			}else if(compareResult==0){
+				results.push(candidate);
+			}
+		}
+	}
+
+	maxScoreChain??=[];
+	maxScoreChain.push(maxScore)
+	return {results: results,scoreChain: maxScoreChain};
+}
+
+function solve(){
+	$("div.square.highlighted").removeClass("highlighted");
+
+	debugCallCount=0;
+	let {results}=solveBoard(board);
+	console.log(`debugCallCount: ${debugCallCount}`);
+	
+	for(let candidate of results){
+		$(`div.square`).filter(function(){return $(this).data("index")==candidate;}).addClass("highlighted");
+	}
+
+}
+
+$("input#size").on("input",function(event){
+	let newSize=Number.parseInt((this as HTMLInputElement).value);
+	if(!Number.isFinite(newSize)) return;
+	size=Math.min(Math.max(newSize,1),7);
+	console.log(`changing size to ${size}`);
+
+	boardElement.empty();
+	boardElement.css("grid-template-columns",`repeat(${size},1fr)`);
+
+	let squares=[];
+	for(let y=0;y<size;y++){
+		for(let x=0;x<size;x++){
+			boardElement.append($('<div class="square"></div>').data("index",x+y*size));
+		}
+	}
+
+	lines=[];
+	// orthogonal lines
+	for(let line=0;line<size;line++){
+		let horizontal :number[]=[];
+		let vertical :number[]=[];
+		for(let i=0;i<size;i++){
+			horizontal.push(line*size+i);
+			vertical.push(i*size+line);
+		}
+		lines.push(horizontal,vertical);
+	}
+	// diagonal lines
+	let diagonal0: number[]=[];
+	let diagonal1: number[]=[];
+	for(let i=0;i<size;i++){
+		diagonal0.push(i*(size+1));
+		diagonal1.push((i+1)*(size-1));
+	}
+	lines.push(diagonal0,diagonal1);
+
+	board=[];
+	solve();
+
+	function setText(element :JQuery){
+		const index: number=element.data("index");
+		const state=board[index];
+		let text="";
+		let color="black";
+		if(state==true){
+			text="〇";
+			color="#e00";
+		}else if(state==false){
+			text="✖";
+			color="darkcyan";
+		}
+		element.text(text);
+		element.css("text-stroke-color",color);
+		element.css("-webkit-text-stroke-color",color);
+	}
+
+	boardElement.children().on("click",function(event){
+		let index :number=$(this).data("index");
+		let state=board[index];
+		if(state==undefined){
+			state=true;
+		}else if(state==true){
+			state=false;
+		}else{
+			state=undefined;
+		}
+		board[index]=state;
+
+		setText($(this));
+		solve();
+	}).on("contextmenu",function(event){
+		event.preventDefault();
+
+		let index :number=$(this).data("index");
+		let state=board[index];
+		if(state==undefined){
+			state=false;
+		}else if(state==false){
+			state=true;
+		}else{
+			state=undefined;
+		}
+		board[index]=state;
+		
+		setText($(this));
+		solve();
+	});
+});
+$("input#size").trigger("input");
+
+$("input#clear").on("click",function(event){
+	$("input#size").trigger("input");
+});
+
+$("div#board-container").on("contextmenu",function(event){
+	event.preventDefault();
+});
+
+$("div#size-container").on("contextmenu",function(event){
+	event.stopPropagation();
+});
