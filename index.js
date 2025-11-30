@@ -27,6 +27,9 @@ setInterval(() => {
 const boardElement = $("div#board");
 let lines = [];
 let linesLookup = [];
+// 0: empty
+// 1: hit
+// 2: miss
 let board = [];
 let size = 0;
 function copyBoard(board) {
@@ -54,11 +57,11 @@ function solveBoard(board) {
     let hasValidLine = false;
     let hasCompletedLine = false;
     for (let line of lines) {
-        if (line.every(position => board[position] == true)) {
+        if (line.every(position => board[position] == 1)) {
             hasCompletedLine = true;
             break;
         }
-        if (!line.some(position => board[position] == false)) {
+        if (!line.some(position => board[position] == 2)) {
             hasValidLine = true;
         }
     }
@@ -71,18 +74,18 @@ function solveBoard(board) {
     let maxScore = Array(size).fill(0);
     let candidates = [];
     for (let square = 0; square < size * size; square++) {
-        if (board[square] != undefined)
+        if (board[square] != 0)
             continue;
         let score = Array(size).fill(0);
         for (let line of linesLookup[square]) {
             let count = 0;
             for (let position of line) {
                 let state = board[position];
-                if (state == false) {
+                if (state == 2) {
                     count = undefined;
                     break;
                 }
-                if (state == true) {
+                if (state == 1) {
                     count++;
                 }
             }
@@ -103,7 +106,7 @@ function solveBoard(board) {
     let results = [];
     for (let candidate of candidates) {
         let copiedBoard = copyBoard(board);
-        copiedBoard[candidate] = true;
+        copiedBoard[candidate] = 1;
         let { scoreChain } = solveBoard(copiedBoard);
         if (maxScoreChain == undefined) {
             maxScoreChain = scoreChain;
@@ -141,11 +144,11 @@ function setText(element) {
     const state = board[index];
     let text = "";
     let color = "black";
-    if (state == true) {
+    if (state == 1) {
         text = "〇";
         color = "#e00";
     }
-    else if (state == false) {
+    else if (state == 2) {
         text = "✖";
         color = "darkcyan";
     }
@@ -157,26 +160,12 @@ function onClick(element, reversed = false) {
     let index = element.data("index");
     let state = board[index];
     if (reversed) {
-        if (state == undefined) {
-            state = false;
-        }
-        else if (state == false) {
-            state = true;
-        }
-        else {
-            state = undefined;
-        }
+        state -= 1;
+        if (state < 0)
+            state = 2;
     }
     else {
-        if (state == undefined) {
-            state = true;
-        }
-        else if (state == true) {
-            state = false;
-        }
-        else {
-            state = undefined;
-        }
+        state = (state + 1) % 3;
     }
     board[index] = state;
     setText(element);
@@ -216,7 +205,7 @@ function reset(newSize) {
     for (let i = 0; i < size * size; i++) {
         linesLookup.push(lines.filter(line => line.includes(i)));
     }
-    board = Array(size * size).fill(undefined);
+    board = Array(size * size).fill(0);
     solve();
     // TODO: Implement arrow key thing
     boardElement.children().on("click", function (event) {

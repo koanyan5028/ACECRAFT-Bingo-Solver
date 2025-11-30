@@ -27,16 +27,17 @@ setInterval(()=>{
 });
 
 
-type State=boolean|undefined;
-
 const boardElement=$("div#board");
 
 let lines :number[][]=[];
 let linesLookup :number[][][]=[];
-let board :State[]=[];
+// 0: empty
+// 1: hit
+// 2: miss
+let board :number[]=[];
 let size :number=0;
 
-function copyBoard(board: State[]) :State[]{
+function copyBoard(board: number[]) :number[]{
 	return Array.from(board);
 }
 
@@ -57,17 +58,17 @@ function compareScoreChains(a :number[][],b :number[][]) :number{
 }
 
 let debugCallCount :number=0;
-function solveBoard(board :State[]) :{results :number[],scoreChain :number[][]}{
+function solveBoard(board :number[]) :{results :number[],scoreChain :number[][]}{
 	debugCallCount++;
 
 	let hasValidLine=false;
 	let hasCompletedLine=false;
 	for(let line of lines){
-		if(line.every(position=>board[position]==true)){
+		if(line.every(position=>board[position]==1)){
 			hasCompletedLine=true;
 			break;
 		}
-		if(!line.some(position=>board[position]==false)){
+		if(!line.some(position=>board[position]==2)){
 			hasValidLine=true;
 		}
 	}
@@ -81,18 +82,18 @@ function solveBoard(board :State[]) :{results :number[],scoreChain :number[][]}{
 	let maxScore :number[]=Array(size).fill(0);
 	let candidates :number[]=[];
 	for(let square=0;square<size*size;square++){
-		if(board[square]!=undefined) continue;
+		if(board[square]!=0) continue;
 
 		let score :number[]=Array(size).fill(0);
 		for(let line of linesLookup[square]){
 			let count :number|undefined=0;
 			for(let position of line){
 				let state=board[position];
-				if(state==false){
+				if(state==2){
 					count=undefined;
 					break;
 				}
-				if(state==true){
+				if(state==1){
 					count++;
 				}
 			}
@@ -115,7 +116,7 @@ function solveBoard(board :State[]) :{results :number[],scoreChain :number[][]}{
 	let results :number[]=[];
 	for(let candidate of candidates){
 		let copiedBoard=copyBoard(board);
-		copiedBoard[candidate]=true;
+		copiedBoard[candidate]=1;
 		let {scoreChain}=solveBoard(copiedBoard);
 		if(maxScoreChain==undefined){
 			maxScoreChain=scoreChain;
@@ -156,10 +157,10 @@ function setText(element :JQuery){
 	const state=board[index];
 	let text="";
 	let color="black";
-	if(state==true){
+	if(state==1){
 		text="〇";
 		color="#e00";
-	}else if(state==false){
+	}else if(state==2){
 		text="✖";
 		color="darkcyan";
 	}
@@ -172,21 +173,10 @@ function onClick(element :JQuery,reversed :boolean=false){
 		let index :number=element.data("index");
 		let state=board[index];
 		if(reversed){
-			if(state==undefined){
-				state=false;
-			}else if(state==false){
-				state=true;
-			}else{
-				state=undefined;
-			}
+			state-=1;
+			if(state<0) state=2;
 		}else{
-			if(state==undefined){
-				state=true;
-			}else if(state==true){
-				state=false;
-			}else{
-				state=undefined;
-			}
+			state=(state+1)%3;
 		}
 		board[index]=state;
 
@@ -233,7 +223,7 @@ function reset(newSize :number){
 		linesLookup.push(lines.filter(line=>line.includes(i)));
 	}
 
-	board=Array(size*size).fill(undefined);
+	board=Array(size*size).fill(0);
 	solve();
 
 	// TODO: Implement arrow key thing
