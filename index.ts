@@ -194,11 +194,9 @@ function onClick(element :JQuery,reversed :boolean=false){
 		solve();
 }
 
-$("input#size").on("input",function(event){
-	let newSize=Number.parseInt((this as HTMLInputElement).value);
-	if(!Number.isFinite(newSize)) return;
-	size=Math.min(Math.max(newSize,1),7);
-	console.log(`changing size to ${size}`);
+function reset(newSize :number){
+	console.log(`resetting with new size: ${newSize}`);
+	size=newSize;
 
 	boardElement.empty();
 	boardElement.css("grid-template-columns",`repeat(${size},1fr)`);
@@ -250,11 +248,18 @@ $("input#size").on("input",function(event){
 
 		onClick($(this),true);
 	});
+}
+
+$("input#size").on("input",function(event){
+	let newSize=Number.parseInt((this as HTMLInputElement).value);
+	if(!Number.isFinite(newSize)) return;
+
+	newSize=Math.min(Math.max(newSize,1),7);
+	reset(newSize);
 });
-$("input#size").trigger("input");
 
 $("input#clear").on("click",function(event){
-	$("input#size").trigger("input");
+	reset(size);
 });
 
 $("div#board-container").on("contextmenu",function(event){
@@ -264,3 +269,5 @@ $("div#board-container").on("contextmenu",function(event){
 $("div#size-container").on("contextmenu",function(event){
 	event.stopPropagation();
 });
+
+reset(4);

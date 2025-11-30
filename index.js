@@ -182,12 +182,9 @@ function onClick(element, reversed = false) {
     setText(element);
     solve();
 }
-$("input#size").on("input", function (event) {
-    let newSize = Number.parseInt(this.value);
-    if (!Number.isFinite(newSize))
-        return;
-    size = Math.min(Math.max(newSize, 1), 7);
-    console.log(`changing size to ${size}`);
+function reset(newSize) {
+    console.log(`resetting with new size: ${newSize}`);
+    size = newSize;
     boardElement.empty();
     boardElement.css("grid-template-columns", `repeat(${size},1fr)`);
     let squares = [];
@@ -232,10 +229,16 @@ $("input#size").on("input", function (event) {
         event.preventDefault();
         onClick($(this), true);
     });
+}
+$("input#size").on("input", function (event) {
+    let newSize = Number.parseInt(this.value);
+    if (!Number.isFinite(newSize))
+        return;
+    newSize = Math.min(Math.max(newSize, 1), 7);
+    reset(newSize);
 });
-$("input#size").trigger("input");
 $("input#clear").on("click", function (event) {
-    $("input#size").trigger("input");
+    reset(size);
 });
 $("div#board-container").on("contextmenu", function (event) {
     event.preventDefault();
@@ -243,3 +246,4 @@ $("div#board-container").on("contextmenu", function (event) {
 $("div#size-container").on("contextmenu", function (event) {
     event.stopPropagation();
 });
+reset(4);
