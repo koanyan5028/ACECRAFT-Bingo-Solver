@@ -136,6 +136,52 @@ function solve() {
         $(`div.square`).filter(function () { return $(this).data("index") == candidate; }).addClass("highlighted");
     }
 }
+function setText(element) {
+    const index = element.data("index");
+    const state = board[index];
+    let text = "";
+    let color = "black";
+    if (state == true) {
+        text = "〇";
+        color = "#e00";
+    }
+    else if (state == false) {
+        text = "✖";
+        color = "darkcyan";
+    }
+    element.text(text);
+    element.css("text-stroke-color", color);
+    element.css("-webkit-text-stroke-color", color);
+}
+function onClick(element, reversed = false) {
+    let index = element.data("index");
+    let state = board[index];
+    if (reversed) {
+        if (state == undefined) {
+            state = false;
+        }
+        else if (state == false) {
+            state = true;
+        }
+        else {
+            state = undefined;
+        }
+    }
+    else {
+        if (state == undefined) {
+            state = true;
+        }
+        else if (state == true) {
+            state = false;
+        }
+        else {
+            state = undefined;
+        }
+    }
+    board[index] = state;
+    setText(element);
+    solve();
+}
 $("input#size").on("input", function (event) {
     let newSize = Number.parseInt(this.value);
     if (!Number.isFinite(newSize))
@@ -147,7 +193,7 @@ $("input#size").on("input", function (event) {
     let squares = [];
     for (let y = 0; y < size; y++) {
         for (let x = 0; x < size; x++) {
-            boardElement.append($('<div class="square"></div>').data("index", x + y * size));
+            boardElement.append($('<div class="square" tabindex="0"></div>').data("index", x + y * size));
         }
     }
     lines = [];
@@ -171,54 +217,16 @@ $("input#size").on("input", function (event) {
     lines.push(diagonal0, diagonal1);
     board = [];
     solve();
-    function setText(element) {
-        const index = element.data("index");
-        const state = board[index];
-        let text = "";
-        let color = "black";
-        if (state == true) {
-            text = "〇";
-            color = "#e00";
-        }
-        else if (state == false) {
-            text = "✖";
-            color = "darkcyan";
-        }
-        element.text(text);
-        element.css("text-stroke-color", color);
-        element.css("-webkit-text-stroke-color", color);
-    }
+    // TODO: Implement arrow key thing
     boardElement.children().on("click", function (event) {
-        let index = $(this).data("index");
-        let state = board[index];
-        if (state == undefined) {
-            state = true;
+        onClick($(this));
+    }).on("keydown", function (event) {
+        if (event.code == "Enter") {
+            onClick($(this), event.shiftKey || event.ctrlKey);
         }
-        else if (state == true) {
-            state = false;
-        }
-        else {
-            state = undefined;
-        }
-        board[index] = state;
-        setText($(this));
-        solve();
     }).on("contextmenu", function (event) {
         event.preventDefault();
-        let index = $(this).data("index");
-        let state = board[index];
-        if (state == undefined) {
-            state = false;
-        }
-        else if (state == false) {
-            state = true;
-        }
-        else {
-            state = undefined;
-        }
-        board[index] = state;
-        setText($(this));
-        solve();
+        onClick($(this), true);
     });
 });
 $("input#size").trigger("input");
