@@ -32,8 +32,7 @@ type State=boolean|undefined;
 const boardElement=$("div#board");
 
 let lines :number[][]=[];
-// ↓ここまで最適化する必要は無さそう
-// let linesLookup;
+let linesLookup :number[][][]=[];
 let board :State[]=[];
 let size :number=0;
 
@@ -85,9 +84,7 @@ function solveBoard(board :State[]) :{results :number[],scoreChain :number[][]}{
 		if(board[square]!=undefined) continue;
 
 		let score :number[]=Array(size+1).fill(0);
-		for(let line of lines){
-			if(!line.includes(square)) continue;
-
+		for(let line of linesLookup[square]){
 			let count :number|undefined=0;
 			for(let position of line){
 				let state=board[position];
@@ -143,8 +140,11 @@ function solve(){
 	$("div.square.highlighted").removeClass("highlighted");
 
 	debugCallCount=0;
+	let started=performance.now();
 	let {results}=solveBoard(board);
+	let ellapsed=performance.now()-started;
 	console.log(`debugCallCount: ${debugCallCount}`);
+	console.log(`ellapsed: ${ellapsed.toFixed(1)}ms`);
 	
 	for(let candidate of results){
 		$(`div.square`).filter(function(){return $(this).data("index")==candidate;}).addClass("highlighted");
@@ -229,6 +229,11 @@ $("input#size").on("input",function(event){
 		diagonal1.push((i+1)*(size-1));
 	}
 	lines.push(diagonal0,diagonal1);
+
+	linesLookup=[];
+	for(let i=0;i<size*size;i++){
+		linesLookup.push(lines.filter(line=>line.includes(i)));
+	}
 
 	board=[];
 	solve();
