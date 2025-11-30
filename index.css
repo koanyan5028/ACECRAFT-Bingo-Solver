@@ -22,7 +22,7 @@ div#main{
 
 div#board-container{
 	width: fit-content;
-	margin-top: 8px;
+	margin: 8px 0 4px 0;
 	background-color: #444;
 	border: 9px double lightgray;
 	padding: 3px;
