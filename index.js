@@ -52,8 +52,14 @@ function compareScoreChains(a, b) {
     return 0;
 }
 let debugCallCount = 0;
+const maxCacheSize = 2 ** 20;
+let cache = new Map();
 function solveBoard(board, leastSteps, candidateLines) {
     debugCallCount++;
+    let key = board.join("");
+    if (cache.has(key)) {
+        return cache.get(key);
+    }
     if (leastSteps == undefined) {
         let hasValidLine = false;
         let hasCompletedLine = false;
@@ -149,8 +155,15 @@ function solveBoard(board, leastSteps, candidateLines) {
         }
     }
     maxScoreChain ??= [];
+    maxScoreChain = maxScoreChain.slice();
     maxScoreChain.push(maxScore);
-    return { results: results, scoreChain: maxScoreChain };
+    if (cache.size >= maxCacheSize) {
+        console.log("Max cache size reached! Clearing cache...");
+        cache.clear();
+    }
+    let ret = { results: results, scoreChain: maxScoreChain };
+    cache.set(key, ret);
+    return ret;
 }
 function solve() {
     $("div.square.highlighted").removeClass("highlighted");
@@ -252,7 +265,7 @@ $("input#size").on("input", function (event) {
     let newSize = Number.parseInt(this.value);
     if (!Number.isFinite(newSize))
         return;
-    newSize = Math.min(Math.max(newSize, 1), 8);
+    newSize = Math.min(Math.max(newSize, 1), 14);
     reset(newSize);
 });
 $("input#clear").on("click", function (event) {
@@ -265,7 +278,7 @@ $("div#size-container").on("contextmenu", function (event) {
     event.stopPropagation();
 });
 reset(4);
-async function benchmark(boardSize = 8, count = 50) {
+async function benchmark(boardSize = 12, count = 50) {
     let preSize = size;
     let preBoard = board;
     // JIT compiler thing
@@ -286,6 +299,7 @@ async function benchmark(boardSize = 8, count = 50) {
         // Right before the new Promise() to prevent console from flashing too much
         console.log(`${i + 1}/${count}`);
         // Enables reloading while running benchmark
+        cache.clear();
         await new Promise(resolve => setTimeout(resolve, 1));
     }
     console.log(`%cBenchmark finished!!\n\n%c- ellapsed: ${ellapsed.toFixed(1)}ms\n- average: ${(ellapsed / count).toFixed(3)}ms`, "font-size: 200%;font-weight: bold;", "");

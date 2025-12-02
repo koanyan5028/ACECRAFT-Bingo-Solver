@@ -63,8 +63,15 @@ function compareScoreChains(a :number[][],b :number[][]) :number{
 }
 
 let debugCallCount :number=0;
+const maxCacheSize=2**20;
+let cache :Map<string,{results :number[],scoreChain :number[][]}>=new Map();
 function solveBoard(board :number[],leastSteps ?:number,candidateLines ?:number[][]) :{results :number[],scoreChain :number[][]}{
 	debugCallCount++;
+
+	let key=board.join("");
+	if(cache.has(key)){
+		return cache.get(key)!;
+	}
 
 	if(leastSteps==undefined){
 		let hasValidLine=false;
@@ -164,8 +171,17 @@ function solveBoard(board :number[],leastSteps ?:number,candidateLines ?:number[
 	}
 
 	maxScoreChain??=[];
+	maxScoreChain=maxScoreChain.slice();
 	maxScoreChain.push(maxScore)
-	return {results: results,scoreChain: maxScoreChain};
+
+	if(cache.size>=maxCacheSize){
+		console.log("Max cache size reached! Clearing cache...");
+		cache.clear();
+	}
+
+	let ret={results: results,scoreChain: maxScoreChain};
+	cache.set(key,ret);
+	return ret;
 }
 
 function solve() :DebugData{
@@ -280,7 +296,7 @@ $("input#size").on("input",function(event){
 	let newSize=Number.parseInt((this as HTMLInputElement).value);
 	if(!Number.isFinite(newSize)) return;
 
-	newSize=Math.min(Math.max(newSize,1),8);
+	newSize=Math.min(Math.max(newSize,1),14);
 	reset(newSize);
 });
 
@@ -298,7 +314,7 @@ $("div#size-container").on("contextmenu",function(event){
 
 reset(4);
 
-async function benchmark(boardSize :number=8,count :number=50){
+async function benchmark(boardSize :number=12,count :number=50){
 	let preSize=size;
 	let preBoard=board;
 
@@ -324,6 +340,7 @@ async function benchmark(boardSize :number=8,count :number=50){
 		// Right before the new Promise() to prevent console from flashing too much
 		console.log(`${i+1}/${count}`);
 		// Enables reloading while running benchmark
+		cache.clear();
 		await new Promise(resolve=>setTimeout(resolve,1));
 	}
 
