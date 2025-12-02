@@ -74,6 +74,7 @@ function solveBoard(board :number[],leastSteps ?:number,candidateLines ?:number[
 	}
 
 	if(leastSteps==undefined){
+		// TODO: Add an optimization for X-only boards
 		let hasValidLine=false;
 		let hasCompletedLine=false;
 
@@ -292,11 +293,12 @@ function reset(newSize :number) :DebugData{
 	return solve();
 }
 
-$("input#size").on("input",function(event){
+let sizeElement=$("input#size");
+sizeElement.on("input",function(event){
 	let newSize=Number.parseInt((this as HTMLInputElement).value);
 	if(!Number.isFinite(newSize)) return;
 
-	newSize=Math.min(Math.max(newSize,1),14);
+	newSize=Math.min(Math.max(newSize,1),Number.parseInt(sizeElement.attr("max")!));
 	reset(newSize);
 });
 

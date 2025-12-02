@@ -61,6 +61,7 @@ function solveBoard(board, leastSteps, candidateLines) {
         return cache.get(key);
     }
     if (leastSteps == undefined) {
+        // TODO: Add an optimization for X-only boards
         let hasValidLine = false;
         let hasCompletedLine = false;
         let maxCount = 0;
@@ -261,11 +262,12 @@ function reset(newSize) {
     board = Array(size * size).fill(0);
     return solve();
 }
-$("input#size").on("input", function (event) {
+let sizeElement = $("input#size");
+sizeElement.on("input", function (event) {
     let newSize = Number.parseInt(this.value);
     if (!Number.isFinite(newSize))
         return;
-    newSize = Math.min(Math.max(newSize, 1), 14);
+    newSize = Math.min(Math.max(newSize, 1), Number.parseInt(sizeElement.attr("max")));
     reset(newSize);
 });
 $("input#clear").on("click", function (event) {
