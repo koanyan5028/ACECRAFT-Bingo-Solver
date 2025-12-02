@@ -105,36 +105,41 @@ footer{
 	background-color: #7fffff;
 }
 
-footer div{
+footer>div{
 	background-color: lightgray;
-	padding: 4px 0 8px 0;
+	padding: 8px 0;
 }
 
-footer div div{
+footer>div>div{
 	display: flex;
 	flex-wrap: wrap;
 	justify-content: center;
+	padding: 0 0 8px 0;
 }
 
-footer div div a{
+footer a{
 	display: block;
 	margin: 0 8px;
 }
 
-@media(forced-colors: active) {
-	div.square {
+footer p{
+	margin: 0 4px;
+}
+
+@media(forced-colors: active){
+	div.square{
 		border-style: solid;
 		text-stroke: 2px black;
 		-webkit-text-stroke: 2px black;
 	}
 
-		div.square.highlighted {
+		div.square.highlighted{
 			border-style: double;
 		}
 }
 
 @media(prefers-color-scheme: dark){
-	body {
+	body{
 		background-color: #222;
 		color: white;
 	}
