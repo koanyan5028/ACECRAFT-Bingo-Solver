@@ -54,14 +54,13 @@ function compareScoreChains(a, b) {
 let debugCallCount = 0;
 const maxCacheSize = 2 ** 20;
 let cache = new Map();
-function solveBoard(board, leastSteps, candidateLines) {
+function solveBoard(board, leastSteps, candidateLines, optimizeFlag = true) {
     debugCallCount++;
     let key = board.join("");
-    if (cache.has(key)) {
+    if (cache.has(key) && (optimizeFlag || leastSteps != undefined)) {
         return cache.get(key);
     }
     if (leastSteps == undefined) {
-        // TODO: Add an optimization for X-only boards
         let hasValidLine = false;
         let hasCompletedLine = false;
         let maxCount = 0;
@@ -94,6 +93,45 @@ function solveBoard(board, leastSteps, candidateLines) {
                 results: [],
                 scoreChain: []
             };
+        }
+        // Optimization for X-only (or equivalent) boards
+        if (maxCount == 0 && optimizeFlag) {
+            let repeatedCandidates = candidateLines.flat();
+            let repetetionCount = [];
+            for (let i = 0; i < size * size; i++) {
+                let count = repeatedCandidates.filter(item => item == i).length;
+                repetetionCount.push(count);
+            }
+            let maxRepetetionCount = Math.max(...repetetionCount);
+            let maxLineScore = [0, 0, 0, 0, 0];
+            let bestLines = [];
+            for (let line of candidateLines) {
+                let lineScore = [0, 0, 0, 0, 0];
+                for (let square of line) {
+                    lineScore[repetetionCount[square]]++;
+                }
+                let compareResult = 0;
+                for (let i = 4; i >= 0; i--) {
+                    let compare = lineScore[i] - maxLineScore[i];
+                    if (compare != 0) {
+                        compareResult = compare;
+                        break;
+                    }
+                }
+                if (compareResult > 0) {
+                    maxLineScore = lineScore;
+                    bestLines = [line];
+                }
+                else if (compareResult == 0) {
+                    bestLines.push(line);
+                }
+            }
+            let ret = {
+                results: Array.from(new Set(bestLines.flat())).filter(square => repetetionCount[square] == maxRepetetionCount),
+                scoreChain: []
+            };
+            cache.set(key, ret);
+            return ret;
         }
         leastSteps = size - maxCount;
     }
@@ -138,7 +176,7 @@ function solveBoard(board, leastSteps, candidateLines) {
             let copiedBoard = copyBoard(board);
             copiedBoard[candidate] = 1;
             let lines = linesLookup[candidate];
-            let { scoreChain } = solveBoard(copiedBoard, leastSteps - 1, candidateLines.filter(line => lines.includes(line)));
+            let { scoreChain } = solveBoard(copiedBoard, leastSteps - 1, candidateLines.filter(line => lines.includes(line)), optimizeFlag);
             if (maxScoreChain == undefined) {
                 maxScoreChain = scoreChain;
                 results.push(candidate);
@@ -166,6 +204,7 @@ function solveBoard(board, leastSteps, candidateLines) {
     cache.set(key, ret);
     return ret;
 }
+let testing = false;
 function solve() {
     $("div.square.highlighted").removeClass("highlighted");
     debugCallCount = 0;
@@ -174,6 +213,12 @@ function solve() {
     let ellapsed = performance.now() - started;
     console.log(`debugCallCount: ${debugCallCount}`);
     console.log(`ellapsed: ${ellapsed.toFixed(1)}ms`);
+    if (testing) {
+        let { results: noOptimization } = solveBoard(board, undefined, undefined, false);
+        if (!(results.length == noOptimization.length && results.every(item => noOptimization.includes(item)))) {
+            console.error(`Incorrect result for board ${JSON.stringify(board)}`);
+        }
+    }
     for (let candidate of results) {
         $(`div.square`).filter(function () { return $(this).data("index") == candidate; }).addClass("highlighted");
     }

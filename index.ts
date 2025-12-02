@@ -65,16 +65,15 @@ function compareScoreChains(a :number[][],b :number[][]) :number{
 let debugCallCount :number=0;
 const maxCacheSize=2**20;
 let cache :Map<string,{results :number[],scoreChain :number[][]}>=new Map();
-function solveBoard(board :number[],leastSteps ?:number,candidateLines ?:number[][]) :{results :number[],scoreChain :number[][]}{
+function solveBoard(board :number[],leastSteps ?:number,candidateLines ?:number[][],optimizeFlag :boolean=true) :{results :number[],scoreChain :number[][]}{
 	debugCallCount++;
 
 	let key=board.join("");
-	if(cache.has(key)){
+	if(cache.has(key) && (optimizeFlag || leastSteps!=undefined)){
 		return cache.get(key)!;
 	}
 
 	if(leastSteps==undefined){
-		// TODO: Add an optimization for X-only boards
 		let hasValidLine=false;
 		let hasCompletedLine=false;
 
@@ -108,6 +107,51 @@ function solveBoard(board :number[],leastSteps ?:number,candidateLines ?:number[
 				results: [],
 				scoreChain: []
 			};
+		}
+
+		// Optimization for X-only (or equivalent) boards
+		if(maxCount==0 && optimizeFlag){
+			let repeatedCandidates=candidateLines.flat();
+			let repetetionCount :number[]=[];
+			for(let i=0;i<size*size;i++){
+				let count=repeatedCandidates.filter(item=>item==i).length;
+				repetetionCount.push(count);
+			}
+
+			let maxRepetetionCount=Math.max(...repetetionCount);
+
+			let maxLineScore :number[]=[0,0,0,0,0];
+			let bestLines :number[][]=[];
+			for(let line of candidateLines){
+				let lineScore :number[]=[0,0,0,0,0];
+				for(let square of line){
+					lineScore[repetetionCount[square]]++;
+				}
+
+				let compareResult=0;
+				for(let i=4;i>=0;i--){
+					let compare=lineScore[i]-maxLineScore[i];
+					if(compare!=0){
+						compareResult=compare;
+						break;
+					}
+				}
+
+				if(compareResult>0){
+					maxLineScore=lineScore;
+					bestLines=[line];
+				}else if(compareResult==0){
+					bestLines.push(line);
+				}
+			}
+
+			let ret={
+				results: Array.from(new Set(bestLines.flat())).filter(square=>repetetionCount[square]==maxRepetetionCount),
+				scoreChain: []
+			};
+
+			cache.set(key,ret);
+			return ret;
 		}
 		
 		leastSteps=size-maxCount;
@@ -155,7 +199,7 @@ function solveBoard(board :number[],leastSteps ?:number,candidateLines ?:number[
 			let copiedBoard=copyBoard(board);
 			copiedBoard[candidate]=1;
 			let lines=linesLookup[candidate];
-			let {scoreChain}=solveBoard(copiedBoard,leastSteps-1,candidateLines!.filter(line=>lines.includes(line)));
+			let {scoreChain}=solveBoard(copiedBoard,leastSteps-1,candidateLines!.filter(line=>lines.includes(line)),optimizeFlag);
 			if(maxScoreChain==undefined){
 				maxScoreChain=scoreChain;
 				results.push(candidate);
@@ -185,6 +229,7 @@ function solveBoard(board :number[],leastSteps ?:number,candidateLines ?:number[
 	return ret;
 }
 
+let testing :boolean=false;
 function solve() :DebugData{
 	$("div.square.highlighted").removeClass("highlighted");
 
@@ -194,6 +239,12 @@ function solve() :DebugData{
 	let ellapsed=performance.now()-started;
 	console.log(`debugCallCount: ${debugCallCount}`);
 	console.log(`ellapsed: ${ellapsed.toFixed(1)}ms`);
+	if(testing){
+		let {results: noOptimization}=solveBoard(board,undefined,undefined,false);
+		if(!(results.length==noOptimization.length && results.every(item=>noOptimization.includes(item)))){
+			console.error(`Incorrect result for board ${JSON.stringify(board)}`);
+		}
+	}
 	
 	for(let candidate of results){
 		$(`div.square`).filter(function(){return $(this).data("index")==candidate;}).addClass("highlighted");
