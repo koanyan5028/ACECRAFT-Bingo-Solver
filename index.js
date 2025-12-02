@@ -52,28 +52,47 @@ function compareScoreChains(a, b) {
     return 0;
 }
 let debugCallCount = 0;
-function solveBoard(board) {
+function solveBoard(board, leastSteps, candidateLines) {
     debugCallCount++;
-    let hasValidLine = false;
-    let hasCompletedLine = false;
-    for (let line of lines) {
-        if (line.every(position => board[position] == 1)) {
-            hasCompletedLine = true;
-            break;
-        }
-        if (!line.some(position => board[position] == 2)) {
+    if (leastSteps == undefined) {
+        let hasValidLine = false;
+        let hasCompletedLine = false;
+        let maxCount = 0;
+        candidateLines = [];
+        if (board.every(cell => cell == 0)) {
             hasValidLine = true;
+            candidateLines = lines.slice(-2);
         }
-    }
-    if (hasCompletedLine || !hasValidLine) {
-        return {
-            results: [],
-            scoreChain: []
-        };
+        else {
+            for (let line of lines) {
+                if (line.some(position => board[position] == 2))
+                    continue;
+                hasValidLine = true;
+                let count = line.filter(position => board[position] == 1).length;
+                if (count == size) {
+                    hasCompletedLine = true;
+                    break;
+                }
+                if (maxCount < count) {
+                    maxCount = count;
+                    candidateLines = [line];
+                }
+                else if (maxCount == count) {
+                    candidateLines.push(line);
+                }
+            }
+        }
+        if (hasCompletedLine || !hasValidLine) {
+            return {
+                results: [],
+                scoreChain: []
+            };
+        }
+        leastSteps = size - maxCount;
     }
     let maxScore = Array(size).fill(0);
     let candidates = [];
-    for (let square = 0; square < size * size; square++) {
+    for (let square of Array.from(new Set(candidateLines.flat()))) {
         if (board[square] != 0)
             continue;
         let score = Array(size).fill(0);
@@ -104,22 +123,28 @@ function solveBoard(board) {
     }
     let maxScoreChain = undefined;
     let results = [];
-    for (let candidate of candidates) {
-        let copiedBoard = copyBoard(board);
-        copiedBoard[candidate] = 1;
-        let { scoreChain } = solveBoard(copiedBoard);
-        if (maxScoreChain == undefined) {
-            maxScoreChain = scoreChain;
-            results.push(candidate);
-        }
-        else {
-            let compareResult = compareScoreChains(scoreChain, maxScoreChain);
-            if (compareResult > 0) {
+    if (leastSteps <= 1) {
+        results = candidates;
+    }
+    else {
+        for (let candidate of candidates) {
+            let copiedBoard = copyBoard(board);
+            copiedBoard[candidate] = 1;
+            let lines = linesLookup[candidate];
+            let { scoreChain } = solveBoard(copiedBoard, leastSteps - 1, candidateLines.filter(line => lines.includes(line)));
+            if (maxScoreChain == undefined) {
                 maxScoreChain = scoreChain;
-                results = [candidate];
-            }
-            else if (compareResult == 0) {
                 results.push(candidate);
+            }
+            else {
+                let compareResult = compareScoreChains(scoreChain, maxScoreChain);
+                if (compareResult > 0) {
+                    maxScoreChain = scoreChain;
+                    results = [candidate];
+                }
+                else if (compareResult == 0) {
+                    results.push(candidate);
+                }
             }
         }
     }
@@ -227,7 +252,7 @@ $("input#size").on("input", function (event) {
     let newSize = Number.parseInt(this.value);
     if (!Number.isFinite(newSize))
         return;
-    newSize = Math.min(Math.max(newSize, 1), 7);
+    newSize = Math.min(Math.max(newSize, 1), 8);
     reset(newSize);
 });
 $("input#clear").on("click", function (event) {
@@ -240,7 +265,7 @@ $("div#size-container").on("contextmenu", function (event) {
     event.stopPropagation();
 });
 reset(4);
-async function benchmark(boardSize = 7, count = 100) {
+async function benchmark(boardSize = 8, count = 50) {
     let preSize = size;
     let preBoard = board;
     // JIT compiler thing
