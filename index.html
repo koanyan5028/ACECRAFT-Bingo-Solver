@@ -16,15 +16,17 @@
 		<div id="main">
 			<p><small>DISCLAIMER: This solver seems to show the most optimal candidates (at least for me) and definitely a bit more accurate than me solving it myself, but I'm yet to 100% convinced that it works perfectly.</small></p>
 			<p><small>注意: このソルバーは多分最適な候補を表示してくれると思います(し、少なくとも私が解くよりは多少精度高いです)が、確証はありません。</small></p>
-			<div id="board-container">
-				<div id="control-panel">
-					<div id="size-container">
-						<label for="size">Size/サイズ:</label>
-						<input type="number" id="size" name="size" value="4" min="1" max="14" step="1" />
+      <div id="outer-board-container">
+				<div id="board-container">
+					<div id="control-panel">
+						<div id="size-container">
+							<label for="size">Size/サイズ:</label>
+							<input type="number" id="size" name="size" value="4" min="1" max="14" step="1" />
+						</div>
+						<input type="button" id="clear" name="clear" value="Clear/クリア" />
 					</div>
-					<input type="button" id="clear" name="clear" value="Clear/クリア" />
+					<div id="board"></div>
 				</div>
-				<div id="board"></div>
 			</div>
 		</div>
 		<script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>

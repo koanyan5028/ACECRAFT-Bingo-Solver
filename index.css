@@ -20,6 +20,12 @@ div#main{
 	display: none;
 }
 
+div#outer-board-container{
+	overflow-x: auto;
+	margin: 0 -8px;
+	padding: 0 8px;
+}
+
 div#board-container{
 	width: fit-content;
 	margin: 8px 0 4px 0;
@@ -34,12 +40,18 @@ div#control-panel{
 }
 
 div#size-container{
-	/*	margin-left: auto;*/
+	position: sticky;
+	left: -4px;
 	background-color: white;
 	width: fit-content;
 	padding: 0 2px 2px 2px;
 	border: 1px black solid;
 	border-radius: 3px;
+}
+
+input#clear{
+	position: sticky;
+	right: -4px;
 }
 
 div#board{
