@@ -27,6 +27,11 @@ setInterval(()=>{
 });
 
 
+interface DebugData{
+	callCount :number;
+	ellapsed :number;
+}
+
 const boardElement=$("div#board");
 
 let lines :number[][]=[];
@@ -137,7 +142,7 @@ function solveBoard(board :number[]) :{results :number[],scoreChain :number[][]}
 	return {results: results,scoreChain: maxScoreChain};
 }
 
-function solve(){
+function solve() :DebugData{
 	$("div.square.highlighted").removeClass("highlighted");
 
 	debugCallCount=0;
@@ -150,6 +155,11 @@ function solve(){
 	for(let candidate of results){
 		$(`div.square`).filter(function(){return $(this).data("index")==candidate;}).addClass("highlighted");
 	}
+
+	return {
+		callCount: debugCallCount,
+		ellapsed
+	};
 }
 
 function setText(element :JQuery){
@@ -184,7 +194,7 @@ function onClick(element :JQuery,reversed :boolean=false){
 		solve();
 }
 
-function reset(newSize :number){
+function reset(newSize :number) :DebugData{
 	console.log(`resetting with new size: ${newSize}`);
 	size=newSize;
 
@@ -223,9 +233,6 @@ function reset(newSize :number){
 		linesLookup.push(lines.filter(line=>line.includes(i)));
 	}
 
-	board=Array(size*size).fill(0);
-	solve();
-
 	// TODO: Implement arrow key thing
 	boardElement.children().on("click",function(event){
 		onClick($(this));
@@ -238,6 +245,9 @@ function reset(newSize :number){
 
 		onClick($(this),true);
 	});
+
+	board=Array(size*size).fill(0);
+	return solve();
 }
 
 $("input#size").on("input",function(event){
@@ -261,3 +271,41 @@ $("div#size-container").on("contextmenu",function(event){
 });
 
 reset(4);
+
+async function benchmark(boardSize :number=7,count :number=100){
+	let preSize=size;
+	let preBoard=board;
+
+	// JIT compiler thing
+	reset(4);
+	for(let i=0;i<1000;i++){
+		solveBoard(Array(16).fill(0));
+	}
+
+	reset(boardSize);
+	// Mark center as miss if the size is odd, so the complexity increases continuously as the size increases
+	if(boardSize%2==1){
+		board[(boardSize*boardSize-1)/2]=2;
+	}
+
+	console.log(`%cStarting benchmark\n\n%c- size: ${boardSize}\n- count: ${count}`,"font-size: 200%;font-weight: bold;","");
+	let ellapsed :number=0;
+
+	console.log(`0/${count}`);
+	for(let i=0;i<count;i++){
+		ellapsed+=solve().ellapsed;
+
+		// Right before the new Promise() to prevent console from flashing too much
+		console.log(`${i+1}/${count}`);
+		// Enables reloading while running benchmark
+		await new Promise(resolve=>setTimeout(resolve,1));
+	}
+
+	console.log(`%cBenchmark finished!!\n\n%c- ellapsed: ${ellapsed.toFixed(1)}ms\n- average: ${(ellapsed/count).toFixed(3)}ms`,"font-size: 200%;font-weight: bold;","");
+
+	// Reset the board to its original state
+	reset(preSize);
+	board=preBoard;
+	$("div.square").each((index,element)=>setText($(element)));
+	solve();
+}

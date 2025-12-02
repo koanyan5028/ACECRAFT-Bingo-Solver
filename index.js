@@ -138,6 +138,10 @@ function solve() {
     for (let candidate of results) {
         $(`div.square`).filter(function () { return $(this).data("index") == candidate; }).addClass("highlighted");
     }
+    return {
+        callCount: debugCallCount,
+        ellapsed
+    };
 }
 function setText(element) {
     const index = element.data("index");
@@ -205,8 +209,6 @@ function reset(newSize) {
     for (let i = 0; i < size * size; i++) {
         linesLookup.push(lines.filter(line => line.includes(i)));
     }
-    board = Array(size * size).fill(0);
-    solve();
     // TODO: Implement arrow key thing
     boardElement.children().on("click", function (event) {
         onClick($(this));
@@ -218,6 +220,8 @@ function reset(newSize) {
         event.preventDefault();
         onClick($(this), true);
     });
+    board = Array(size * size).fill(0);
+    return solve();
 }
 $("input#size").on("input", function (event) {
     let newSize = Number.parseInt(this.value);
@@ -236,3 +240,33 @@ $("div#size-container").on("contextmenu", function (event) {
     event.stopPropagation();
 });
 reset(4);
+async function benchmark(boardSize = 7, count = 100) {
+    let preSize = size;
+    let preBoard = board;
+    // JIT compiler thing
+    reset(4);
+    for (let i = 0; i < 1000; i++) {
+        solveBoard(Array(16).fill(0));
+    }
+    reset(boardSize);
+    // Mark center as miss if the size is odd, so the complexity increases continuously as the size increases
+    if (boardSize % 2 == 1) {
+        board[(boardSize * boardSize - 1) / 2] = 2;
+    }
+    console.log(`%cStarting benchmark\n\n%c- size: ${boardSize}\n- count: ${count}`, "font-size: 200%;font-weight: bold;", "");
+    let ellapsed = 0;
+    console.log(`0/${count}`);
+    for (let i = 0; i < count; i++) {
+        ellapsed += solve().ellapsed;
+        // Right before the new Promise() to prevent console from flashing too much
+        console.log(`${i + 1}/${count}`);
+        // Enables reloading while running benchmark
+        await new Promise(resolve => setTimeout(resolve, 1));
+    }
+    console.log(`%cBenchmark finished!!\n\n%c- ellapsed: ${ellapsed.toFixed(1)}ms\n- average: ${(ellapsed / count).toFixed(3)}ms`, "font-size: 200%;font-weight: bold;", "");
+    // Reset the board to its original state
+    reset(preSize);
+    board = preBoard;
+    $("div.square").each((index, element) => setText($(element)));
+    solve();
+}
